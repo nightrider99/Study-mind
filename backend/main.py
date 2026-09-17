@@ -3,12 +3,11 @@ import os
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from openai import OpenAI
+from google import genai
 from pydantic import BaseModel
 
 app = FastAPI(title="StudyMind AI API")
 
-# Allow your GitHub Pages website to call this API.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -16,12 +15,12 @@ app.add_middleware(
         "http://localhost:3000",
         "http://localhost:5173",
     ],
-    allow_credentials=False,
     allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+api_key = os.getenv("GEMINI_API_KEY")
+client = genai.Client(api_key=api_key) if api_key else None
 
 
 class QuestionRequest(BaseModel):
@@ -46,25 +45,30 @@ def ask_question(request: QuestionRequest):
     if len(question) > 4000:
         raise HTTPException(
             status_code=400,
-            detail="Question is too long. Please shorten it."
+            detail="Question is too long."
+        )
+
+    if client is None:
+        raise HTTPException(
+            status_code=503,
+            detail="AI service is not configured."
         )
 
     try:
-        response = client.responses.create(
-            model="gpt-4.1-mini",
-            instructions=(
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=(
                 "You are StudyMind AI, a friendly learning assistant. "
-                "Explain concepts clearly for students. "
-                "Use simple language and helpful examples. "
-                "If you are unsure, say so."
+                "Explain concepts in simple language and give examples "
+                "when helpful. If unsure, say so.\n\n"
+                f"Student question: {question}"
             ),
-            input=question,
         )
 
-        return {"answer": response.output_text}
+        return {"answer": response.text or "No answer was returned."}
 
     except Exception:
         raise HTTPException(
-            status_code=500,
-            detail="AI request failed. Please try again later."
+            status_code=502,
+            detail="AI request failed. Please try again."
         )
