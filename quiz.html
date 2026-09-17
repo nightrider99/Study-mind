@@ -1,0 +1,473 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StudyMind AI | Quiz & Flashcards</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #0b1020;
+      color: #f1f5f9;
+    }
+
+    header {
+      padding: 20px;
+      text-align: center;
+      background: #111a30;
+      border-bottom: 1px solid #26324d;
+    }
+
+    header h1 {
+      margin: 0;
+      color: #8b9cff;
+    }
+
+    header p {
+      color: #aab6cc;
+      margin-bottom: 0;
+    }
+
+    main {
+      width: min(700px, 92%);
+      margin: 30px auto;
+    }
+
+    .card {
+      background: #111a30;
+      border: 1px solid #26324d;
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 22px;
+    }
+
+    h2 {
+      margin-top: 0;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 10px;
+      padding: 12px 16px;
+      font-size: 15px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .tab {
+      flex: 1;
+      color: #dbe4ff;
+      background: #202c48;
+    }
+
+    .tab.active {
+      background: #6677f5;
+      color: white;
+    }
+
+    .primary {
+      background: #6677f5;
+      color: white;
+    }
+
+    .secondary {
+      background: #26324d;
+      color: white;
+    }
+
+    .option {
+      display: block;
+      width: 100%;
+      text-align: left;
+      margin: 10px 0;
+      background: #1b2741;
+      color: #e2e8f0;
+      border: 1px solid #344361;
+    }
+
+    .option:hover:not(:disabled) {
+      background: #29395d;
+    }
+
+    .option.correct {
+      background: #14532d;
+      border-color: #22c55e;
+    }
+
+    .option.wrong {
+      background: #7f1d1d;
+      border-color: #ef4444;
+    }
+
+    .option:disabled {
+      cursor: default;
+      opacity: 1;
+    }
+
+    .muted {
+      color: #aab6cc;
+    }
+
+    #feedback {
+      margin: 18px 0;
+      line-height: 1.6;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .progress {
+      height: 8px;
+      background: #26324d;
+      border-radius: 20px;
+      overflow: hidden;
+      margin: 15px 0 22px;
+    }
+
+    #progressBar {
+      width: 0%;
+      height: 100%;
+      background: #8b9cff;
+      transition: width 0.3s;
+    }
+
+    .flashcard {
+      min-height: 220px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      background: #1b2741;
+      border: 1px solid #344361;
+      border-radius: 14px;
+      padding: 24px;
+      cursor: pointer;
+      line-height: 1.6;
+    }
+
+    .flashcard strong {
+      color: #a5b4fc;
+      margin-bottom: 12px;
+    }
+
+    .flashcard p {
+      font-size: 20px;
+    }
+
+    .controls {
+      display: flex;
+      gap: 10px;
+      margin-top: 18px;
+      flex-wrap: wrap;
+    }
+
+    .controls button {
+      flex: 1;
+    }
+
+    footer {
+      text-align: center;
+      color: #718096;
+      padding: 25px;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>StudyMind AI</h1>
+    <p>Practice, learn, and remember.</p>
+  </header>
+
+  <main>
+    <div class="tabs">
+      <button class="tab active" id="quizTab" onclick="showSection('quiz')">
+        Quiz
+      </button>
+      <button class="tab" id="flashcardsTab" onclick="showSection('flashcards')">
+        Flashcards
+      </button>
+    </div>
+
+    <section id="quizSection">
+      <div class="card">
+        <h2>Practice Quiz</h2>
+        <p class="muted">Sample questions to test your knowledge.</p>
+
+        <div class="progress">
+          <div id="progressBar"></div>
+        </div>
+
+        <p id="questionCount" class="muted"></p>
+        <h3 id="question"></h3>
+        <div id="options"></div>
+        <div id="feedback" aria-live="polite"></div>
+
+        <button id="nextButton" class="primary hidden" onclick="nextQuestion()">
+          Next Question
+        </button>
+
+        <div id="result" class="hidden">
+          <h2>Quiz Complete!</h2>
+          <p id="scoreText"></p>
+          <button class="primary" onclick="restartQuiz()">Try Again</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="flashcardsSection" class="hidden">
+      <div class="card">
+        <h2>Flashcards</h2>
+        <p class="muted">Tap the card to reveal the answer.</p>
+
+        <div
+          class="flashcard"
+          id="flashcard"
+          role="button"
+          tabindex="0"
+          onclick="flipCard()"
+          onkeydown="if(event.key === 'Enter' || event.key === ' ') { event.preventDefault(); flipCard(); }"
+        >
+          <strong id="cardLabel">QUESTION</strong>
+          <p id="cardText"></p>
+          <span class="muted">Tap to flip</span>
+        </div>
+
+        <div class="controls">
+          <button class="secondary" onclick="previousCard()">Previous</button>
+          <button class="primary" onclick="nextCard()">Next</button>
+        </div>
+
+        <p id="cardCount" class="muted" style="text-align:center"></p>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    StudyMind AI · Keep learning every day.
+  </footer>
+
+  <script>
+    const questions = [
+      {
+        question: "What does CPU stand for?",
+        options: [
+          "Central Processing Unit",
+          "Computer Personal Unit",
+          "Central Program Utility",
+          "Control Processing User"
+        ],
+        answer: 0,
+        explanation: "The CPU, or Central Processing Unit, executes instructions and processes data."
+      },
+      {
+        question: "Which language is commonly used to build web page structure?",
+        options: ["Python", "HTML", "SQL", "C++"],
+        answer: 1,
+        explanation: "HTML defines the structure and content of a web page."
+      },
+      {
+        question: "What is the main purpose of a database?",
+        options: [
+          "To draw pictures",
+          "To increase screen brightness",
+          "To store and organize data",
+          "To replace the operating system"
+        ],
+        answer: 2,
+        explanation: "A database stores, organizes, and helps retrieve information."
+      },
+      {
+        question: "Which of these is a programming language?",
+        options: ["HTTP", "Python", "Wi-Fi", "USB"],
+        answer: 1,
+        explanation: "Python is a programming language used for many tasks, including AI and web development."
+      },
+      {
+        question: "What does AI stand for?",
+        options: [
+          "Automated Internet",
+          "Artificial Intelligence",
+          "Advanced Interface",
+          "Applied Information"
+        ],
+        answer: 1,
+        explanation: "AI stands for Artificial Intelligence, which involves systems performing tasks associated with human intelligence."
+      }
+    ];
+
+    const flashcards = [
+      {
+        question: "What is a CPU?",
+        answer: "The Central Processing Unit. It executes instructions and processes data."
+      },
+      {
+        question: "What is HTML?",
+        answer: "HyperText Markup Language. It structures content on web pages."
+      },
+      {
+        question: "What is a database?",
+        answer: "An organized collection of data that can be stored, accessed, and managed."
+      },
+      {
+        question: "What is Python?",
+        answer: "A high-level programming language used in web development, automation, data science, and AI."
+      },
+      {
+        question: "What is Artificial Intelligence?",
+        answer: "Technology that enables computer systems to perform tasks such as learning, reasoning, and understanding language."
+      }
+    ];
+
+    let currentQuestion = 0;
+    let score = 0;
+    let answered = false;
+    let currentCard = 0;
+    let showingAnswer = false;
+
+    function showSection(section) {
+      document.getElementById("quizSection").classList.toggle("hidden", section !== "quiz");
+      document.getElementById("flashcardsSection").classList.toggle("hidden", section !== "flashcards");
+      document.getElementById("quizTab").classList.toggle("active", section === "quiz");
+      document.getElementById("flashcardsTab").classList.toggle("active", section === "flashcards");
+    }
+
+    function loadQuestion() {
+      answered = false;
+
+      const q = questions[currentQuestion];
+
+      document.getElementById("questionCount").textContent =
+        `Question ${currentQuestion + 1} of ${questions.length}`;
+
+      document.getElementById("progressBar").style.width =
+        `${(currentQuestion / questions.length) * 100}%`;
+
+      document.getElementById("question").textContent = q.question;
+      document.getElementById("feedback").textContent = "";
+      document.getElementById("nextButton").classList.add("hidden");
+      document.getElementById("result").classList.add("hidden");
+      document.getElementById("question").classList.remove("hidden");
+
+      const optionsContainer = document.getElementById("options");
+      optionsContainer.innerHTML = "";
+
+      q.options.forEach((option, index) => {
+        const button = document.createElement("button");
+        button.className = "option";
+        button.textContent = `${String.fromCharCode(65 + index)}. ${option}`;
+        button.onclick = () => checkAnswer(index);
+        optionsContainer.appendChild(button);
+      });
+    }
+
+    function checkAnswer(selectedIndex) {
+      if (answered) return;
+      answered = true;
+
+      const q = questions[currentQuestion];
+      const buttons = document.querySelectorAll(".option");
+
+      buttons.forEach((button, index) => {
+        button.disabled = true;
+
+        if (index === q.answer) {
+          button.classList.add("correct");
+        } else if (index === selectedIndex) {
+          button.classList.add("wrong");
+        }
+      });
+
+      const feedback = document.getElementById("feedback");
+
+      if (selectedIndex === q.answer) {
+        score++;
+        feedback.textContent = "Correct! " + q.explanation;
+      } else {
+        feedback.textContent = "Not quite. " + q.explanation;
+      }
+
+      document.getElementById("nextButton").classList.remove("hidden");
+      document.getElementById("progressBar").style.width =
+        `${((currentQuestion + 1) / questions.length) * 100}%`;
+    }
+
+    function nextQuestion() {
+      currentQuestion++;
+
+      if (currentQuestion < questions.length) {
+        loadQuestion();
+      } else {
+        showResult();
+      }
+    }
+
+    function showResult() {
+      document.getElementById("question").classList.add("hidden");
+      document.getElementById("options").innerHTML = "";
+      document.getElementById("feedback").textContent = "";
+      document.getElementById("nextButton").classList.add("hidden");
+      document.getElementById("result").classList.remove("hidden");
+
+      const percentage = Math.round((score / questions.length) * 100);
+
+      document.getElementById("scoreText").textContent =
+        `You scored ${score} out of ${questions.length} (${percentage}%).`;
+    }
+
+    function restartQuiz() {
+      currentQuestion = 0;
+      score = 0;
+      loadQuestion();
+    }
+
+    function renderFlashcard() {
+      const card = flashcards[currentCard];
+
+      document.getElementById("cardLabel").textContent =
+        showingAnswer ? "ANSWER" : "QUESTION";
+
+      document.getElementById("cardText").textContent =
+        showingAnswer ? card.answer : card.question;
+
+      document.getElementById("cardCount").textContent =
+        `Card ${currentCard + 1} of ${flashcards.length}`;
+    }
+
+    function flipCard() {
+      showingAnswer = !showingAnswer;
+      renderFlashcard();
+    }
+
+    function nextCard() {
+      currentCard = (currentCard + 1) % flashcards.length;
+      showingAnswer = false;
+      renderFlashcard();
+    }
+
+    function previousCard() {
+      currentCard = (currentCard - 1 + flashcards.length) % flashcards.length;
+      showingAnswer = false;
+      renderFlashcard();
+    }
+
+    loadQuestion();
+    renderFlashcard();
+  </script>
+</body>
+</html>
