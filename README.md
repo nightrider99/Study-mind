@@ -1,133 +1,83 @@
-# Study-mind
-StudyMind AI 🧠
+# StudyMind AI 🧠
 
-An AI-powered learning assistant for students
+**Learn smarter. Practice better. Grow every day.**
 
-StudyMind AI is an intelligent learning platform designed to help students study smarter, understand their materials, and track their academic progress.
-
-Students can upload notes or PDFs, ask questions about their study materials, generate practice quizzes, create flashcards, and monitor their learning progress — all in one place.
-
-✨ Features
-
-📚 AI Notes & PDF Assistant
-
-- Upload study notes and PDF documents.
-- Ask questions about uploaded materials.
-- Get answers based on the provided content.
-- Include references to relevant sections or pages where possible.
-
-📝 Quiz Generator
-
-- Generate multiple-choice questions from study materials.
-- Create short-answer practice questions.
-- Take quizzes and receive scores.
-- Review correct answers and explanations.
-
-🗂️ Smart Flashcards
-
-- Automatically turn important concepts into question-and-answer flashcards.
-- Review flashcards for active recall and revision.
-- Reinforce understanding of key topics.
-
-📊 Learning Progress Dashboard
-
-- Track quiz scores and performance over time.
-- Record completed study sessions.
-- Identify topics that need more practice.
-- Monitor learning progress in one place.
-
-🛠️ Technology Stack
-
-Part| Technology
-Frontend| React + TypeScript
-Styling| Tailwind CSS
-Backend| Python + FastAPI
-AI Integration| Planned
-Document Processing| Planned
-
-The project will begin with a functional application and gradually introduce AI-powered features.
-
-🎯 Project Goals
-
-- Make studying more interactive and personalized.
-- Help students understand their own learning materials.
-- Encourage active recall through quizzes and flashcards.
-- Help students identify knowledge gaps and improve over time.
-
-🚀 Getting Started
-
-Prerequisites
-
-Install the following tools before running the project:
-
-- Node.js and npm
-- Python 3.10+
-- Git
-
-Clone the Repository
-
-git clone https://github.com/nightrider99/study-mind.git
-cd study-mind
-
-Frontend Setup
-
-cd frontend
-npm install
-npm run dev
-
-Backend Setup
-
-Open a separate terminal:
-
-cd backend
-python -m venv .venv
-
-Activate the virtual environment:
-
-Windows
-
-.venv\Scripts\activate
-
-macOS / Linux
-
-source .venv/bin/activate
-
-Install dependencies and start the server:
-
-pip install -r requirements.txt
-uvicorn app.main:app --reload
-
-«These commands assume the project uses the suggested "frontend" and "backend" folder structure. Setup instructions may change as development progresses.»
-
-🗺️ Roadmap
-
-- [ ] Set up the React + TypeScript frontend.
-- [ ] Set up the FastAPI backend.
-- [ ] Build the study dashboard UI.
-- [ ] Add PDF and notes upload functionality.
-- [ ] Implement document text extraction.
-- [ ] Add AI-powered question answering.
-- [ ] Build the quiz generator.
-- [ ] Add smart flashcards.
-- [ ] Track quiz scores and study sessions.
-- [ ] Add topic-based progress tracking.
-- [ ] Improve usability and mobile responsiveness.
-
-🤝 Contributing
-
-Contributions, suggestions, and feedback are welcome!
-
-If you'd like to contribute:
-
-1. Fork the repository.
-2. Create a feature branch.
-3. Make your changes.
-4. Submit a pull request.
-
-📄 License
-
-This project is currently under development. A license will be added when one is selected.
+An AI-powered learning assistant that helps students study smarter — upload notes, ask questions, generate quizzes and flashcards, and track progress over time.
 
 ---
 
-StudyMind AI — Learn smarter. Practice better. Grow every day.
+## 📌 Table of Contents
+
+- [About](#-about)
+- [Features](#-features)
+- [Tech Stack](#-tech-stack)
+- [Architecture](#-architecture)
+- [Project Structure](#-project-structure)
+- [Getting Started](#-getting-started)
+- [Environment Variables](#-environment-variables)
+- [Database Setup (Supabase)](#-database-setup-supabase)
+- [Deployment](#-deployment)
+- [API Overview](#-api-overview)
+- [Developing on Your Phone](#-developing-on-your-phone)
+- [Roadmap](#-roadmap)
+- [Contributing](#-contributing)
+- [Troubleshooting](#-troubleshooting)
+- [License](#-license)
+
+---
+
+## 💡 About
+
+StudyMind AI is a full-stack web application built for students. Upload your study materials (notes, PDFs), then use the app to:
+
+- Ask questions and get answers grounded in **your own** content
+- Auto-generate multiple-choice and short-answer quizzes
+- Turn key concepts into flashcards for active recall
+- Track quiz scores and study sessions over time
+
+The project is designed as a monorepo: a **React + TypeScript** frontend and a **Python FastAPI** backend, deployed independently (Vercel + Render) from a single GitHub repository.
+
+---
+
+## ✨ Features
+
+### 📚 AI Notes & PDF Assistant
+- Upload study notes and PDF documents
+- Ask questions about uploaded materials
+- Get answers based on the provided content, with references to relevant sections where possible
+
+### 📝 Quiz Generator
+- Generate multiple-choice questions from study materials
+- Create short-answer practice questions
+- Take quizzes and receive instant scores
+- Review correct answers with explanations
+
+### 🗂️ Smart Flashcards
+- Automatically turn important concepts into Q&A flashcards
+- Review flashcards for active recall and spaced revision
+
+### 📊 Learning Progress Dashboard
+- Track quiz scores and performance over time
+- Record completed study sessions
+- Identify topics that need more practice
+
+> **Note:** AI-powered features (Q&A, quiz generation, flashcard extraction) are planned and will be layered on top of the core app.
+
+---
+
+## 🛠️ Tech Stack
+
+| Layer      | Technology                          | Hosted On        |
+|------------|-------------------------------------|------------------|
+| Frontend   | React 18 + TypeScript + Vite        | Vercel           |
+| Styling    | Tailwind CSS                        | —                |
+| Backend    | Python 3.10+ + FastAPI              | Render           |
+| Database   | PostgreSQL (via Supabase)           | Supabase (free)  |
+| File Storage | Supabase Storage (PDF uploads)    | Supabase (free)  |
+| PDF Parsing | pypdf                              | —                |
+| AI (planned) | LLM API integration               | TBD              |
+
+---
+
+## 🏗️ Architecture
+
