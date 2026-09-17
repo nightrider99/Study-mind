@@ -1,0 +1,225 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>StudyMind AI — My Notes</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #0b1020;
+      color: #f5f7ff;
+    }
+    header {
+      padding: 20px 6%;
+      border-bottom: 1px solid #26314a;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    a { color: #b5aaff; text-decoration: none; }
+    main { max-width: 900px; margin: 40px auto; padding: 20px; }
+    h1 { font-size: 36px; }
+    p { color: #aeb7ce; }
+    input, textarea {
+      width: 100%;
+      margin: 8px 0 14px;
+      padding: 13px;
+      border: 1px solid #303b56;
+      border-radius: 10px;
+      background: #121a2d;
+      color: white;
+      font: inherit;
+    }
+    textarea { min-height: 150px; resize: vertical; }
+    button {
+      border: 0;
+      border-radius: 10px;
+      padding: 12px 17px;
+      margin: 4px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .save { background: #8875ff; color: white; }
+    .edit { background: #263653; color: white; }
+    .delete { background: #542b3b; color: white; }
+    .note {
+      margin-top: 16px;
+      padding: 20px;
+      border: 1px solid #26314a;
+      border-radius: 14px;
+      background: #121a2d;
+      overflow-wrap: anywhere;
+    }
+    .note h3 { margin-top: 0; }
+    .note-content { white-space: pre-wrap; color: #c5cee0; }
+    .empty { padding: 20px 0; }
+  </style>
+</head>
+<body>
+  <header>
+    <strong>StudyMind <span style="color:#9a8cff">AI</span></strong>
+    <a href="index.html">← Home</a>
+  </header>
+
+  <main>
+    <h1>My Notes 📚</h1>
+    <p>Create and manage your study notes.</p>
+
+    <form id="noteForm">
+      <label for="title">Note title</label>
+      <input id="title" maxlength="120" placeholder="e.g. Introduction to AI" required>
+
+      <label for="content">Note content</label>
+      <textarea id="content" placeholder="Write your study notes here..." required></textarea>
+
+      <button class="save" type="submit" id="saveButton">Save note</button>
+      <button type="button" class="edit" id="cancelButton" hidden>Cancel edit</button>
+    </form>
+
+    <h2>Your saved notes</h2>
+    <p id="status" aria-live="polite"></p>
+    <section id="notesList"></section>
+  </main>
+
+  <script>
+    const STORAGE_KEY = "studymind-notes-v1";
+    const form = document.getElementById("noteForm");
+    const titleInput = document.getElementById("title");
+    const contentInput = document.getElementById("content");
+    const notesList = document.getElementById("notesList");
+    const status = document.getElementById("status");
+    const saveButton = document.getElementById("saveButton");
+    const cancelButton = document.getElementById("cancelButton");
+
+    let notes = [];
+    let editingId = null;
+
+    try {
+      notes = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+      if (!Array.isArray(notes)) notes = [];
+    } catch {
+      notes = [];
+    }
+
+    function saveToStorage() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
+        return true;
+      } catch {
+        status.textContent = "Could not save notes in this browser.";
+        return false;
+      }
+    }
+
+    function renderNotes() {
+      notesList.replaceChildren();
+
+      if (notes.length === 0) {
+        const empty = document.createElement("p");
+        empty.className = "empty";
+        empty.textContent = "No notes yet. Create your first note above.";
+        notesList.appendChild(empty);
+        return;
+      }
+
+      notes.forEach(note => {
+        const card = document.createElement("article");
+        card.className = "note";
+
+        const heading = document.createElement("h3");
+        heading.textContent = note.title;
+
+        const text = document.createElement("p");
+        text.className = "note-content";
+        text.textContent = note.content;
+
+        const edit = document.createElement("button");
+        edit.className = "edit";
+        edit.textContent = "Edit";
+        edit.onclick = () => startEdit(note.id);
+
+        const remove = document.createElement("button");
+        remove.className = "delete";
+        remove.textContent = "Delete";
+        remove.onclick = () => deleteNote(note.id);
+
+        card.append(heading, text, edit, remove);
+        notesList.appendChild(card);
+      });
+    }
+
+    form.addEventListener("submit", event => {
+      event.preventDefault();
+
+      const title = titleInput.value.trim();
+      const content = contentInput.value.trim();
+      if (!title || !content) return;
+
+      if (editingId !== null) {
+        notes = notes.map(note =>
+          note.id === editingId ? { ...note, title, content } : note
+        );
+      } else {
+        notes.unshift({
+          id: crypto.randomUUID(),
+          title,
+          content
+        });
+      }
+
+      if (!saveToStorage()) return;
+
+      form.reset();
+      editingId = null;
+      saveButton.textContent = "Save note";
+      cancelButton.hidden = true;
+      status.textContent = "Note saved.";
+      renderNotes();
+    });
+
+    function startEdit(id) {
+      const note = notes.find(item => item.id === id);
+      if (!note) return;
+
+      editingId = id;
+      titleInput.value = note.title;
+      contentInput.value = note.content;
+      saveButton.textContent = "Update note";
+      cancelButton.hidden = false;
+      titleInput.focus();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function deleteNote(id) {
+      if (!confirm("Delete this note?")) return;
+
+      const previous = notes;
+      notes = notes.filter(note => note.id !== id);
+
+      if (!saveToStorage()) {
+        notes = previous;
+        return;
+      }
+
+      if (editingId === id) cancelEdit();
+      status.textContent = "Note deleted.";
+      renderNotes();
+    }
+
+    function cancelEdit() {
+      editingId = null;
+      form.reset();
+      saveButton.textContent = "Save note";
+      cancelButton.hidden = true;
+      status.textContent = "";
+    }
+
+    cancelButton.addEventListener("click", cancelEdit);
+    renderNotes();
+  </script>
+</body>
+</html>
