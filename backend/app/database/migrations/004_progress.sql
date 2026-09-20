@@ -1,9 +1,9 @@
 create table if not exists study_events (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
-  kind text not null,           -- 'quiz_attempt' | 'card_review' | 'doc_upload'
+  kind text not null,
   ref_id uuid,
-  value real,                   -- quiz: percent score; review: rating; upload: null
+  value real,
   created_at timestamptz not null default now()
 );
 create index if not exists study_events_user_created_idx
@@ -16,7 +16,6 @@ drop policy if exists "own events" on study_events;
 create policy "own events" on study_events
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
--- Daily aggregates for the last N days, zero-filled.
 create or replace function progress_timeline(
   p_user_id uuid,
   p_days int default 30
