@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: studymind-api
+    runtime: docker
+    plan: free
+    region: oregon
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_JWT_AUD
+        value: authenticated
+      - key: SUPABASE_STORAGE_BUCKET
+        value: documents
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-1.5-flash
+      - key: EMBEDDING_MODEL
+        value: text-embedding-004
+      - key: CORS_ORIGINS
+        value: https://your-app.vercel.app
