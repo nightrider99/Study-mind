@@ -164,3 +164,8 @@ def delete_quiz(quiz_id: str, user_id: str = Depends(get_current_user_id)):
     )
     if not res.data:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Quiz not found")
+
+# after sb.table("quiz_attempts").insert(...).execute()
+ from app.services.progress_service import log_event
+ pct = (score / len(qs) * 100.0) if qs else 0.0
+ log_event(user_id, "quiz_attempt", quiz_id, pct)
