@@ -6,11 +6,12 @@ from app.database.connection import get_supabase
 from app.schemas.document import DocumentOut
 from app.services.embedding_service import embed_documents, to_pgvector
 from app.services.pdf_service import chunk_text, parse_pdf
+from app.services.progress_service import log_event
 
 router = APIRouter()
 
 ALLOWED_MIME = {"application/pdf"}
-MAX_BYTES = 20 * 1024 * 1024   # 20 MB — comfortably under Supabase free-tier limits
+MAX_BYTES = 20 * 1024 * 1024
 CHUNK_INSERT_BATCH = 50
 
 
@@ -41,7 +42,6 @@ async def upload_document(
 
     sb = get_supabase()
 
-    # 1) Row first so we have the id for the storage path.
     doc = (
         sb.table("documents")
         .insert(
@@ -59,7 +59,6 @@ async def upload_document(
     doc_id = doc["id"]
     storage_path = f"{user_id}/{doc_id}.pdf"
 
-    # 2) Upload to Supabase Storage.
     try:
         sb.storage.from_(settings.supabase_storage_bucket).upload(
             storage_path,
@@ -71,9 +70,6 @@ async def upload_document(
         sb.table("documents").update({"status": "failed", "error": f"upload: {e}"}).eq("id", doc_id).execute()
         raise HTTPException(status.HTTP_502_BAD_GATEWAY, f"Storage upload failed: {e}")
 
-    # 3) Parse -> chunk -> embed -> insert.
-    #    Synchronous for MVP. If upload latency becomes annoying, move this
-    #    block behind FastAPI BackgroundTasks or a worker.
     try:
         parsed = parse_pdf(data)
         if not parsed.text.strip():
@@ -105,6 +101,8 @@ async def upload_document(
         sb.table("documents").update(
             {"status": "ready", "page_count": parsed.page_count, "error": None}
         ).eq("id", doc_id).execute()
+
+        log_event(user_id, "doc_upload", doc_id, None)
     except Exception as e:
         sb.table("documents").update({"status": "failed", "error": str(e)}).eq("id", doc_id).execute()
         raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, f"Processing failed: {e}")
@@ -139,10 +137,6 @@ def delete_document(doc_id: str, user_id: str = Depends(get_current_user_id)):
         try:
             sb.storage.from_(settings.supabase_storage_bucket).remove([path])
         except Exception:
-            pass  # orphaned file is not fatal; chunks cascade below
+            pass
 
-    # chunks cascade via FK
     sb.table("documents").delete().eq("id", doc_id).eq("user_id", user_id).execute()
-
-from app.services.progress_service import log_event
-log_event(user_id, "doc_upload", doc_id, None)
