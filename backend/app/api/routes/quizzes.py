@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
+from app.core.rate_limit import gemini_limiter
 from app.core.security import get_current_user_id
 from app.database.connection import get_supabase
 from app.schemas.quiz import (
@@ -7,6 +8,7 @@ from app.schemas.quiz import (
     QuizResultOut, SubmitQuizRequest,
 )
 from app.services.generation_service import generate_quiz
+from app.services.progress_service import log_event
 from app.services.source_service import build_source_text
 
 router = APIRouter()
@@ -43,6 +45,8 @@ def _load_detail(quiz_id: str, user_id: str) -> dict:
 
 @router.post("/generate", response_model=QuizDetailOut, status_code=201)
 def create_quiz(body: GenerateQuizRequest, user_id: str = Depends(get_current_user_id)):
+    gemini_limiter.check(user_id)
+
     source = build_source_text(user_id, body.document_ids, body.note_ids)
     if not source.strip():
         raise HTTPException(
@@ -72,7 +76,7 @@ def create_quiz(body: GenerateQuizRequest, user_id: str = Depends(get_current_us
     rows = []
     for i, q in enumerate(questions):
         opts = [str(o) for o in (q.get("options") or [])][:4]
-        while len(opts) < 4:      # schema is a hint, not a contract
+        while len(opts) < 4:
             opts.append("")
         ci = int(q.get("correct_index", 0))
         if not 0 <= ci < 4:
@@ -147,6 +151,9 @@ def submit_quiz(
         "answers": body.answers,
     }).execute()
 
+    pct = (score / len(qs) * 100.0) if qs else 0.0
+    log_event(user_id, "quiz_attempt", quiz_id, pct)
+
     return {
         "score": score,
         "total": len(qs),
@@ -164,8 +171,3 @@ def delete_quiz(quiz_id: str, user_id: str = Depends(get_current_user_id)):
     )
     if not res.data:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Quiz not found")
-
-# after sb.table("quiz_attempts").insert(...).execute()
- from app.services.progress_service import log_event
- pct = (score / len(qs) * 100.0) if qs else 0.0
- log_event(user_id, "quiz_attempt", quiz_id, pct)
