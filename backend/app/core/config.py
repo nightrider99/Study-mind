@@ -18,3 +18,8 @@ class Settings(BaseSettings):
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
 
 settings = Settings()
+
+supabase_storage_bucket: str = "documents"
+embedding_model: str = "text-embedding-004"
+chunk_size_words: int = 600
+chunk_overlap_words: int = 75
