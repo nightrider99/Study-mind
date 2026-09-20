@@ -1,7 +1,10 @@
 from collections.abc import Iterator
+
 from google import genai
 from google.genai import types
+
 from app.core.config import settings
+from app.core.retry import call_with_retry
 
 _client: genai.Client | None = None
 
@@ -38,7 +41,7 @@ def stream_chat(
     history: list[dict] | None = None,
 ) -> Iterator[str]:
     """Yield plain text deltas from Gemini. History is a list of
-    {"role": "user"|"model", "text": "..."} dicts (stateless API — caller sends it)."""
+    {"role": "user"|"model", "text": "..."} dicts."""
     client = _get_client()
 
     context = _build_context_block(chunks)
@@ -54,14 +57,18 @@ def stream_chat(
         )
     contents.append(types.Content(role="user", parts=[types.Part(text=user_turn)]))
 
-    stream = client.models.generate_content_stream(
-        model=settings.gemini_model,
-        contents=contents,
-        config=types.GenerateContentConfig(
-            system_instruction=SYSTEM_PROMPT,
-            temperature=0.3,
-            max_output_tokens=1024,
+    stream = call_with_retry(
+        lambda: client.models.generate_content_stream(
+            model=settings.gemini_model,
+            contents=contents,
+            config=types.GenerateContentConfig(
+                system_instruction=SYSTEM_PROMPT,
+                temperature=0.3,
+                max_output_tokens=1024,
+            ),
         ),
+        attempts=2,
+        label="stream_chat",
     )
 
     for event in stream:
