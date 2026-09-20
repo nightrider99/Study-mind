@@ -164,3 +164,6 @@ def delete_deck(deck_id: str, user_id: str = Depends(get_current_user_id)):
     )
     if not res.data:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Deck not found")
+
+     from app.services.progress_service import log_event
+log_event(user_id, "card_review", card_id, float(body.rating))
