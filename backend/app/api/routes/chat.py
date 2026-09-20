@@ -103,7 +103,8 @@ def chat_stream(body: ChatRequest, user_id: str = Depends(get_current_user_id)):
                     user_id, session_id, "assistant", "".join(acc), sources
                 )
             yield _sse("done", {"reason": "stop"})
-        except Exception:
+        except Exception as e:
+            # Don't leak internals to the wire; rid lets you find the full trace in logs.
             yield _sse("error", {"message": "Generation failed. Please retry."})
             yield _sse("done", {"reason": "error"})
 
