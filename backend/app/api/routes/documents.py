@@ -143,3 +143,6 @@ def delete_document(doc_id: str, user_id: str = Depends(get_current_user_id)):
 
     # chunks cascade via FK
     sb.table("documents").delete().eq("id", doc_id).eq("user_id", user_id).execute()
+
+from app.services.progress_service import log_event
+log_event(user_id, "doc_upload", doc_id, None)
