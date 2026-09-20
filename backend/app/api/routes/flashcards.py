@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
+from app.core.rate_limit import gemini_limiter
 from app.core.security import get_current_user_id
 from app.database.connection import get_supabase
 from app.schemas.flashcard import (
@@ -9,6 +10,7 @@ from app.schemas.flashcard import (
     GenerateDeckRequest, ReviewRequest,
 )
 from app.services.generation_service import generate_deck
+from app.services.progress_service import log_event
 from app.services.source_service import build_source_text
 from app.services.srs_service import apply_review
 
@@ -39,6 +41,8 @@ def _load_deck(deck_id: str, user_id: str) -> dict:
 
 @router.post("/decks/generate", response_model=DeckDetailOut, status_code=201)
 def create_deck(body: GenerateDeckRequest, user_id: str = Depends(get_current_user_id)):
+    gemini_limiter.check(user_id)
+
     source = build_source_text(user_id, body.document_ids, body.note_ids)
     if not source.strip():
         raise HTTPException(
@@ -150,6 +154,8 @@ def review_card(
         "rating": body.rating,
     }).execute()
 
+    log_event(user_id, "card_review", card_id, float(body.rating))
+
     return (
         sb.table("flashcards").select("*").eq("id", card_id).execute().data[0]
     )
@@ -164,6 +170,3 @@ def delete_deck(deck_id: str, user_id: str = Depends(get_current_user_id)):
     )
     if not res.data:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Deck not found")
-
-     from app.services.progress_service import log_event
-log_event(user_id, "card_review", card_id, float(body.rating))
