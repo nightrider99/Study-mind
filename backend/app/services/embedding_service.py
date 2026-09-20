@@ -1,9 +1,11 @@
 from google import genai
 from google.genai import types
+
 from app.core.config import settings
+from app.core.retry import call_with_retry
 
 _client: genai.Client | None = None
-_BATCH = 50  # keep request payloads modest
+_BATCH = 50
 
 
 def _get_client() -> genai.Client:
@@ -20,10 +22,13 @@ def embed_documents(texts: list[str]) -> list[list[float]]:
     out: list[list[float]] = []
     for i in range(0, len(texts), _BATCH):
         batch = texts[i : i + _BATCH]
-        resp = client.models.embed_content(
-            model=settings.embedding_model,
-            contents=batch,
-            config=types.EmbedContentConfig(task_type="RETRIEVAL_DOCUMENT"),
+        resp = call_with_retry(
+            lambda: client.models.embed_content(
+                model=settings.embedding_model,
+                contents=batch,
+                config=types.EmbedContentConfig(task_type="RETRIEVAL_DOCUMENT"),
+            ),
+            label="embed_documents",
         )
         out.extend(list(e.values) for e in resp.embeddings)
     return out
@@ -31,10 +36,13 @@ def embed_documents(texts: list[str]) -> list[list[float]]:
 
 def embed_query(text: str) -> list[float]:
     client = _get_client()
-    resp = client.models.embed_content(
-        model=settings.embedding_model,
-        contents=[text],
-        config=types.EmbedContentConfig(task_type="RETRIEVAL_QUERY"),
+    resp = call_with_retry(
+        lambda: client.models.embed_content(
+            model=settings.embedding_model,
+            contents=[text],
+            config=types.EmbedContentConfig(task_type="RETRIEVAL_QUERY"),
+        ),
+        label="embed_query",
     )
     return list(resp.embeddings[0].values)
 
