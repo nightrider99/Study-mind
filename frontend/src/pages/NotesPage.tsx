@@ -96,15 +96,9 @@ function NoteEditor({
 }: { editing: Note | "new" | null; onClose: () => void; onSaved: () => void }) {
   const isNew = editing === "new";
   const note = editing && editing !== "new" ? editing : null;
-  const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<Error | null>(null);
 
-  // reset when modal opens
-  if (editing && isNew && (title !== "" || content !== "") && !busy && !err) { /* noop */ }
-
-  // use a key on modal to remount — simpler:
   return (
     <Modal key={isNew ? "new" : note?.id ?? "none"} open={!!editing} onClose={onClose}
       title={isNew ? "New note" : "Edit note"}>
@@ -126,32 +120,5 @@ function NoteEditor({
         }}
       />
     </Modal>
-  );
-}
-
-function NoteEditorInner({
-  initial, busy, err, onSubmit,
-}: { initial: { title: string; content: string }; busy: boolean; err: Error | null; onSubmit: (t: string, c: string) => void }) {
-  const [title, setTitle] = useState(initial.title);
-  const [content, setContent] = useState(initial.content);
-
-  return (
-    <form onSubmit={(e) => { e.preventDefault(); onSubmit(title, content); }}>
-      <ErrorBanner error={err} />
-      <div className="field">
-        <label>Title</label>
-        <input className="input" value={title} onChange={(e) => setTitle(e.target.value)} required />
-      </div>
-      <div className="field">
-        <label>Content</label>
-        <textarea className="textarea" style={{ minHeight: 260 }}
-          value={content} onChange={(e) => setContent(e.target.value)} />
-      </div>
-      <div className="row" style={{ justifyContent: "flex-end" }}>
-        <button className="btn primary" disabled={busy}>
-          {busy ? <span className="spinner" /> : null} Save
-        </button>
-      </div>
-    </form>
   );
 }
