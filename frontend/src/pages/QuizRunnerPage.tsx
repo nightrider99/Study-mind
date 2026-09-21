@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { quizzesApi } from "../services/quizzes";
 import { Spinner } from "../components/common/Spinner";
 import { ErrorBanner } from "../components/common/ErrorBanner";
@@ -7,7 +7,6 @@ import type { QuizDetail, QuizResult } from "../types";
 
 export default function QuizRunnerPage() {
   const { quizId } = useParams<{ quizId: string }>();
-  const nav = useNavigate();
   const [quiz, setQuiz] = useState<QuizDetail | null>(null);
   const [idx, setIdx] = useState(0);
   const [answers, setAnswers] = useState<number[]>([]);
